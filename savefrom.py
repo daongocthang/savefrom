@@ -1,17 +1,12 @@
+import argparse
 import os
 import time
-from enum import Enum
 
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from browser import BrowserFactory
-
-
-class Action(Enum):
-    SHOW = 'show'
-    WRITE = 'write'
 
 
 class SaveFrom:
@@ -37,20 +32,35 @@ class SaveFrom:
 
 
 if __name__ == '__main__':
-    sf = SaveFrom()
-    data_links = []
+    parser = argparse.ArgumentParser()
+    parser.add_argument('address', help='the default is a URL')
+    parser.add_argument('-i', '--import', dest='im', action='store_true',
+                        help='define the address is a file path')
+    parser.add_argument('-o', '--output', metavar='', default=os.getcwd(),
+                        help='where to store the result (default: current directory)')
 
-    f = open('watchlist.txt', 'r')
-    for url in f:
+    args = parser.parse_args()
+
+    assert os.path.exists(args.output), '{} Not Exist'.format(args.output)
+    dest = os.path.join(args.output, 'data-links.txt')
+
+    res = []
+    sf = SaveFrom()
+    if args.im:
+        assert os.path.exists(args.address), 'Not found {}'.format(args.address)
+        with open(args.address, 'r') as f:
+            for u in f:
+                try:
+                    res.append(sf.get_link(u))
+                except:
+                    pass
+    else:
         try:
-            data_links.append(sf.get_link(url))
+            res = [sf.get_link(args.address)]
         except:
             pass
-    f.close()
 
-    with open('data_links.txt', 'w') as f:
-        for s in data_links:
-            f.write(s)
+    with open(dest, 'w') as f:
+        for line in res:
+            f.write(line)
             f.write('\n')
-
-    sf.close()
